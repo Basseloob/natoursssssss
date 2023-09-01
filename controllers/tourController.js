@@ -1,7 +1,7 @@
 const fs = require('fs');
-const { Promise } = require('mongoose');
-const sharp = require('sharp');
+// const { Promise } = require('mongoose'); // cuases error --> "Cannot read properties of undefined (reading 'all')",
 const multer = require('multer');
+const sharp = require('sharp');
 const TourModel = require('../models/tourModel');
 // const APIFeatures = require('../utils/apiFeatures');
 const AppError = require('../utils/appError');
@@ -66,10 +66,12 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
 
   //  for (let i = 0; i < array.length; i++)
   await Promise.all(
+    // we are using map here because --> we are waiting for 3 promesis... as soon its complete will move to the next.
     req.files.images.map(async (file, i) => {
       const filename = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
 
-      await sharp(req.files.images[i].buffer)
+      // await sharp(req.files.imageCover[0].buffer)
+      await sharp(file.buffer)
         .resize(2000, 1333)
         .toFormat('jpeg')
         .jpeg({ quality: 50 })
@@ -80,10 +82,10 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
     })
   );
 
-  // console.log(
-  //   'req.body.images from resizeTourImages function  :  ',
-  //   req.body.images
-  // );
+  console.log(
+    'req.body.images from resizeTourImages function  :  ',
+    req.body.images
+  );
 
   next();
 });
@@ -93,7 +95,7 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
 //   if (req.params.id * 1 > readAllTours.length) {//     return res.status(404).json({//       status: 'fail',//       message: 'Invalid ID:',//     });//   }//   next();// };
 // for creating tour// exports.checkBody = (req, res, next) => {//   if (!req.body.name || !req.body.price) {//     return res.status(400).json({//       status: 'fail',//       message: 'Messing name or price',//     });//   }//   next();// };
 
-const options = { maxTimeMS: 20000 }; // set timeout to 20 secs.
+// const options = { maxTimeMS: 20000 }; // set timeout to 20 secs.
 
 exports.aliasTopTours = (req, res, next) => {
   req.query.limit = '5';
