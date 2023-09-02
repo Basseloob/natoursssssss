@@ -37,10 +37,9 @@ app.use(morgan('dev')); // GET /api/v1/tours 200 4.369 ms - 8751
 // Development logging :
 if (process.env.NODE_ENV === 'development') {
   console.log('we are in the DEVELOPMENT env');
+} else {
+  console.log('we are in the PRODUCTION env');
 }
-//  else {
-//   console.log('we are in the PRODUCTION env');
-// }
 
 // Limit requests from the same API :
 const limiter = rateLimit({
