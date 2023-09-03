@@ -1,90 +1,73 @@
-const nodemailer = require('nodemailer'); // Is the website for testing the emails sent.
-// Need to read the Nodemailer documentation.
+const nodemailer = require('nodemailer');
 const pug = require('pug');
-const { convert } = require('html-to-text');
-const mg = require('nodemailer-mailgun-transport');
+const htmlToText = require('html-to-text');
 
 module.exports = class Email {
   constructor(user, url) {
     this.to = user.email;
-    this.firstname = user.name.split(' ')[0];
+    this.firstName = user.name.split(' ')[0];
     this.url = url;
-    this.from = `Jonas Schmedtmann <${process.env.EMAIL_FROM}>`;
+    this.from = `Basil Baragaba <${process.env.EMAIL_FROM}>`;
   }
 
   newTransport() {
-    if (process.env.NODE_ENV === 'development') {
-      // Sendgrid :
+    if (process.env.NODE_ENV === 'production') {
+      // Sendgrid
       return nodemailer.createTransport({
-        // service: 'SendGrid', // no need to specify the server and the port - because nodemailer already knows 'sendgrid'
+        service: 'SendGrid',
         auth: {
-          // from: process.env.SENDGRID_EMAIL_FROM,
-          // user: process.env.SENDGRID_USERNAME,
-          // pass: process.env.SENDGRID_PASSWORD,
-          api_key: 'key-1234123412341234',
-          domain:
-            'https://app.mailgun.com/app/sending/domains/sandbox7101ed17f87248d5a9fc1e372472caf8.mailgun.org',
-          host: 'smtp.mailgun.org',
-          port: 587,
-          user: 'postmaster@sandbox7101ed17f87248d5a9fc1e372472caf8.mailgun.org',
-          pass: 'b8b948d6f105ae537ed76e39b0917df9-451410ff-349c86a8',
+          user: process.env.SENDGRID_USERNAME,
+          pass: process.env.SENDGRID_API_KEY,
         },
-        secure: false,
       });
     }
 
-    // if we are in development mode :
-    // 1) Create a transporter
-    // return nodemailer.createTransport({
-    //   host: process.env.EMAIL_HOST,
-    //   port: process.env.EMAIL_PORT,
-    //   auth: {
-    //     user: process.env.EMAIL_USERNAME,
-    //     pass: process.env.EMAIL_PASSWORD,
-    //   },
-    //
-    // });
+    return nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
   }
 
-  // Send actual email :
-  async send(templateFileName, subject) {
-    // 1) Render HTML base on bug templateFileName :
-    const html = pug.renderFile(
-      `${__dirname}/../views/email/${templateFileName}.pug`, // pug.renderFile -->  it will take a file and render the pug code into real HTML.
-      { firstName: this.firstName, url: this.url, subject }
-    );
+  // Send the actual email
+  async send(template, subject) {
+    // 1) Render HTML based on a pug template
+    const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
+      firstName: this.firstName,
+      url: this.url,
+      subject,
+    });
 
-    // 2) Define email options :
-
+    // 2) Define email options
     const mailOptions = {
-      // from: 'Jonas Schmedtmann <hello@jonas.io>',
       from: this.from,
-      // to: options.email,
       to: this.to,
       subject,
       html,
-      // text: options.message,
-      text: convert(html),
+      text: htmlToText.fromString(html),
     };
+    console.log(
+      'from mailOptions in mail.js -------------------------------------------------------------------------------------------------------------'
+    );
+    console.log('From :', this.from);
+    console.log('To :', this.to);
+    console.log('Subject: ', subject);
 
-    console.log('mailoptions in mail.js class : ', mailOptions);
-
-    // 3) Create a transport and end email :
+    // 3) Create a transport and send email
     await this.newTransport().sendMail(mailOptions);
   }
 
   async sendWelcome() {
-    // send welcome function is added in authController.js inside signUp functions.
-    await this.send(
-      'welcome', // welcome.pug file
-      'Welcome to the Natours Family! from mail calss'
-    );
+    await this.send('welcome', 'Welcome to the Natours Family!');
   }
 
-  async sendPaswordReset() {
+  async sendPasswordReset() {
     await this.send(
-      'passwordReset', // passwordReset.pug
-      'your password reset token valid for only 10 minutes'
+      'passwordReset',
+      'Your password reset token (valid for only 10 minutes)'
     );
   }
 };
